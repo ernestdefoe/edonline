@@ -113,6 +113,13 @@ The [`preview/`](preview/) directory ships a static HTML mockup of every surface
 - **Font Awesome 7** for iconography
 - Visual cues borrowed from [Avocado](https://discuss.flarum.org/d/27126) by ramon
 
+## Support
+
+Questions, bug reports, and feature requests:
+
+- **Support forum:** https://ernestdefoe.online
+- **Issues:** https://github.com/ernestdefoe/mosaic/issues
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

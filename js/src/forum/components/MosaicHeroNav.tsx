@@ -71,6 +71,27 @@ export default class MosaicHeroNav extends Component {
       );
     }
 
+    // Page Builder content types (Articles, etc.) — ernestdefoe/page-builder
+    // serializes the viewable types to the forum payload as
+    // `pagebuilderContentTypes`; surface each as a pill linking to /c/{slug}.
+    const contentTypes = app.forum.attribute<Array<{ slug: string; name: string; name_plural: string; icon?: string }>>(
+      'pagebuilderContentTypes'
+    );
+    if (Array.isArray(contentTypes)) {
+      contentTypes.forEach((type) => {
+        if (!type || !type.slug) return;
+        pills.push(
+          <LinkButton
+            href={`/c/${type.slug}`}
+            icon={type.icon || 'fa-solid fa-newspaper'}
+            className="MosaicHeaderNav-item"
+          >
+            {type.name_plural || type.name || type.slug}
+          </LinkButton>
+        );
+      });
+    }
+
     return (
       <nav className="MosaicHeroNav" aria-label="Sections">
         {pills}

@@ -12,11 +12,12 @@
 namespace Ernestdefoe\Mosaic\Api;
 
 use Carbon\Carbon;
+use Ernestdefoe\Mosaic\SupportTicket;
 use Flarum\Discussion\Discussion;
 use Flarum\Post\Post;
+use Flarum\User\Guest;
 use Flarum\User\User;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
-use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\QueryException;
 use Psr\Log\LoggerInterface;
 
@@ -204,7 +205,7 @@ class AddForumStatistics
             }
 
             try {
-                return (int) $this->connection()->table($table)
+                return (int) SupportTicket::queryTable($table)
                     ->where('status', 'resolved')
                     ->count();
             } catch (QueryException $e) {
@@ -231,7 +232,7 @@ class AddForumStatistics
             return $cached === '' ? null : $cached;
         }
 
-        $schema = $this->connection()->getSchemaBuilder();
+        $schema = SupportTicket::query()->getConnection()->getSchemaBuilder();
         $resolved = '';
         foreach (['linkrobins_support_tickets', 'support_tickets'] as $candidate) {
             try {
@@ -257,15 +258,103 @@ class AddForumStatistics
     }
 
     /**
-     * The active database connection, taken from a core Eloquent model rather
-     * than a constructor-injected ConnectionInterface. Flarum wires the
-     * model's connection (and never sets the Facade application root, so the
-     * Schema/DB facades can't be used here); borrowing it keeps this service
-     * free of a low-level connection dependency while still reaching the
-     * schema builder for the foreign support-tickets table probe.
+     * Forum-wide top contributors by comment count (cached). The sidebar panel
+     * reads this instead of ranking the handful of users that happen to be in
+     * the SPA store on the current page. Only public profile data is exposed.
+     *
+     * @return list<array<string, mixed>>
      */
-    private function connection(): ConnectionInterface
+    public function topContributors(int $limit = 5): array
     {
-        return User::query()->getConnection();
+        $limit = max(1, min($limit, 20));
+
+        return $this->cache->remember('mosaic.stats.topContributors.' . $limit, self::CACHE_TTL, function () use ($limit) {
+            try {
+                return User::query()
+                    ->where('comment_count', '>', 0)
+                    ->orderByDesc('comment_count')
+                    ->orderByDesc('discussion_count')
+                    ->with('groups')
+                    ->limit($limit)
+                    ->get()
+                    ->map(fn (User $u) => $this->serializeContributor($u))
+                    ->values()
+                    ->toArray();
+            } catch (QueryException $e) {
+                $this->log->warning('[mosaic] topContributors query failed', ['exception' => $e]);
+                return [];
+            }
+        });
+    }
+
+    /** Project a User into the shape the contributor panel expects. */
+    private function serializeContributor(User $u): array
+    {
+        $displayName = $u->username;
+        try { $displayName = $u->display_name ?: $u->username; } catch (\BadFunctionCallException | \RuntimeException $e) { /* keep username */ }
+
+        $avatarUrl = null;
+        try { $avatarUrl = $u->avatarUrl(); } catch (\BadFunctionCallException | \RuntimeException $e) { /* initials fallback */ }
+
+        $comments    = (int) $u->comment_count;
+        $discussions = (int) $u->discussion_count;
+
+        // Surface a role badge only for staff-ish primary groups, mirroring
+        // the frontend's previous heuristic.
+        $role  = null;
+        $group = $u->groups->first();
+        if ($group) {
+            $name = $group->name_singular ?? null;
+            if ($name && preg_match('/(staff|mod|admin|expert)/i', $name)) {
+                $role = $name;
+            }
+        }
+
+        return [
+            'name'      => $displayName,
+            'username'  => $u->username,
+            'role'      => $role,
+            'meta'      => $comments === 1 ? '1 post' : ($comments . ' posts'),
+            'points'    => $comments + $discussions,
+            'avatarUrl' => $avatarUrl,
+            'href'      => '/u/' . rawurlencode((string) $u->username),
+        ];
+    }
+
+    /**
+     * Forum-wide trending discussions by participant count (cached). Computed
+     * against GUEST visibility so the cached list is safe to serve to every
+     * viewer — it never surfaces a discussion a guest couldn't already see.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function trending(int $limit = 4): array
+    {
+        $limit = max(1, min($limit, 10));
+
+        return $this->cache->remember('mosaic.stats.trending.' . $limit, self::CACHE_TTL, function () use ($limit) {
+            try {
+                return Discussion::query()
+                    ->whereVisibleTo(new Guest())
+                    ->whereNull('hidden_at')
+                    ->where('comment_count', '>', 0)
+                    ->orderByDesc('participant_count')
+                    ->orderByDesc('comment_count')
+                    ->limit($limit)
+                    ->get()
+                    ->map(fn (Discussion $d) => [
+                        'title' => (string) $d->title,
+                        'meta'  => ((int) $d->comment_count) . ' replies',
+                        // /d/{id} redirects to the canonical slug URL, so we
+                        // avoid invoking the slug driver here.
+                        'href'  => '/d/' . (int) $d->id,
+                    ])
+                    ->values()
+                    ->toArray();
+            } catch (QueryException $e) {
+                $this->log->warning('[mosaic] trending query failed', ['exception' => $e]);
+                return [];
+            }
+        });
     }
 }

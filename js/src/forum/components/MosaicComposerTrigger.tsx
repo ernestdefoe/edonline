@@ -2,6 +2,7 @@ import app from 'flarum/forum/app';
 import Component from 'flarum/common/Component';
 import Avatar from 'flarum/common/components/Avatar';
 import translate from '../utils/translate';
+import openComposer from '../utils/openComposer';
 
 /**
  * Composer-trigger card that sits above the hero nav pills.
@@ -60,12 +61,6 @@ export default class MosaicComposerTrigger extends Component {
   }
 
   open() {
-    /* IndexSidebar renders .IndexPage-newDiscussion as part of its items
-     * list; layout.less hides the surrounding nav block but the button is in
-     * the DOM. Click it to reuse Flarum's own composer-open flow. */
-    const btn = document.querySelector('.IndexPage-newDiscussion');
-    if (btn instanceof HTMLElement) {
-      btn.click();
-    }
+    openComposer();
   }
 }

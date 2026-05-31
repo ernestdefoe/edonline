@@ -1,9 +1,8 @@
 import Component from 'flarum/common/Component';
 import app from 'flarum/forum/app';
 import type Mithril from 'mithril';
-import type User from 'flarum/common/models/User';
-import type Discussion from 'flarum/common/models/Discussion';
 import marketplaceUrlHelper from '../utils/marketplaceUrl';
+import translate from '../utils/translate';
 
 type IconStyle = Record<string, string | number>;
 
@@ -27,12 +26,6 @@ interface Contributor {
   avatarUrl?: string | null;
   href?: string;
 }
-
-/** app.route.user is core, but typed defensively for older typings. */
-type RouteWithUser = typeof app.route & { user?: (user: User) => string };
-
-/** participantCount isn't in the core Discussion typings; declare it locally. */
-type DiscussionLike = Discussion & { participantCount?: () => number };
 
 /**
  * SidebarPanels — the stack of right-sidebar cards:
@@ -114,39 +107,20 @@ export default class SidebarPanels extends Component {
   }
 
   topContributors(): Mithril.Children {
-    /* Operator-provided list wins. */
+    // Forum-wide list, computed + cached server-side and exposed as the
+    // mosaicTopContributors attribute — reliable on every page, unlike the old
+    // store snapshot (which only held the current page's ~20 records). An admin
+    // JSON override is honoured server-side. Tone (avatar colour) is assigned
+    // per row here from a fixed palette.
     const fromAttr = app.forum.attribute<Contributor[]>('mosaicTopContributors');
-    if (Array.isArray(fromAttr) && fromAttr.length) {
-      return this.renderContribCard(fromAttr.map((c) => ({ ...c })));
-    }
+    if (!Array.isArray(fromAttr) || !fromAttr.length) return null;
 
-    /* Otherwise rank real users from the store by commentCount. */
-    const users = (app.store.all('users') as User[]) || [];
-    const ranked = users
-      .filter((u) => u && typeof u.commentCount === 'function' && (u.commentCount() || 0) > 0)
-      .sort((a, b) => (b.commentCount() || 0) - (a.commentCount() || 0))
-      .slice(0, 5);
-
-    /* Hide the panel rather than show fake names when nothing qualifies. */
-    if (ranked.length < 1) return null;
-
-    const routeUser = (app.route as RouteWithUser).user;
     const tones = ['blue', 'green', 'amber', 'rose', 'purple', 'teal', 'indigo', 'slate'];
-    const data: Contributor[] = ranked.map((u, i) => {
-      const c = u.commentCount() || 0;
-      const d = u.discussionCount() || 0;
-      const group = (u.groups?.() || [])[0];
-      const role = group ? group.nameSingular?.() : null;
-      return {
-        name: u.displayName?.() || u.username?.() || '—',
-        role: role && /(staff|mod|admin|expert)/i.test(role) ? role : null,
-        meta: c === 1 ? '1 post' : `${formatCount(c)} posts`,
-        points: formatCount(c + d),
-        tone: tones[i % tones.length],
-        avatarUrl: u.avatarUrl?.() || null,
-        href: routeUser?.(u) || '#',
-      };
-    });
+    const data: Contributor[] = fromAttr.map((c, i) => ({
+      ...c,
+      points: typeof c.points === 'number' ? formatCount(c.points) : c.points,
+      tone: c.tone || tones[i % tones.length],
+    }));
 
     return this.renderContribCard(data);
   }
@@ -192,25 +166,14 @@ export default class SidebarPanels extends Component {
   }
 
   trending(): Mithril.Children {
-    /* Rank loaded discussions by participantCount; render only when we have a
-     * real discussion to show (no fabricated placeholder rows). */
-    let items: { title: string; meta: string; href: string }[] = [];
-    try {
-      const discussions = (app.store.all('discussions') as DiscussionLike[]) || [];
-      items = discussions
-        .filter((d) => typeof d.title === 'function')
-        .sort((a, b) => (b.participantCount?.() ?? 0) - (a.participantCount?.() ?? 0))
-        .slice(0, 4)
-        .map((d) => ({
-          title: d.title(),
-          meta: `${d.commentCount?.() ?? 0} replies`,
-          href: app.route.discussion(d),
-        }));
-    } catch (e) {
-      /* ignore — empty items array hides the panel below */
-    }
+    // Forum-wide trending discussions, computed + cached server-side (against
+    // guest visibility, so nothing private leaks) and exposed as the
+    // mosaicTrending attribute. Reliable on every page, unlike the old store
+    // snapshot of the current page's discussions.
+    const items =
+      app.forum.attribute<{ title: string; meta: string; href: string }[]>('mosaicTrending');
 
-    if (!items.length) return null;
+    if (!Array.isArray(items) || !items.length) return null;
 
     return (
       <div className="MosaicSideCard">
@@ -237,13 +200,21 @@ export default class SidebarPanels extends Component {
       <a className="MosaicSideCard MosaicMarketplacePromo" href={url}>
         <div className="MosaicMarketplacePromo-bg">{fa('fa-solid fa-store')}</div>
         <div className="MosaicMarketplacePromo-inner">
-          <div className="MosaicMarketplacePromo-kicker">NEW · Marketplace</div>
-          <div className="MosaicMarketplacePromo-title">Premium themes &amp; extensions</div>
+          <div className="MosaicMarketplacePromo-kicker">
+            {translate('marketplace_promo.kicker', 'NEW · Marketplace')}
+          </div>
+          <div className="MosaicMarketplacePromo-title">
+            {translate('marketplace_promo.title', 'Premium themes & extensions')}
+          </div>
           <div className="MosaicMarketplacePromo-desc">
-            Digital products, services, subscriptions, and private extensions from trusted sellers.
+            {translate(
+              'marketplace_promo.desc',
+              'Digital products, services, subscriptions, and private extensions from trusted sellers.'
+            )}
           </div>
           <div className="MosaicMarketplacePromo-cta">
-            Browse the store {fa('fa-solid fa-arrow-right', { fontSize: '11px' })}
+            {translate('marketplace_promo.cta', 'Browse the store')}{' '}
+            {fa('fa-solid fa-arrow-right', { fontSize: '11px' })}
           </div>
         </div>
       </a>

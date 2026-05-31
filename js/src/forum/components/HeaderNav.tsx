@@ -3,6 +3,7 @@ import LinkButton from 'flarum/common/components/LinkButton';
 import Button from 'flarum/common/components/Button';
 import type Mithril from 'mithril';
 import translate from '../utils/translate';
+import openComposer from '../utils/openComposer';
 
 /**
  * Builds the items injected into the hero nav.
@@ -54,7 +55,7 @@ export function startDiscussionButton(): Mithril.Children {
     <Button
       className="Button Button--primary MosaicHeaderNav-start"
       icon={inTickets ? 'fa-solid fa-headset' : 'fa-solid fa-edit'}
-      onclick={inTickets ? startTicket : startDiscussion}
+      onclick={inTickets ? startTicket : openComposer}
     >
       {inTickets
         ? translate('nav.start_ticket', 'Start a Ticket')
@@ -72,37 +73,6 @@ function isTicketsRoute(): boolean {
   } catch (e) {
     return false;
   }
-}
-
-/**
- * Open the new-discussion composer.
- *
- * Flarum 2 chunk-splits DiscussionComposer / LogInModal, so a static import
- * resolves to undefined until the chunk loads. Instead we click the hidden
- * `.IndexPage-newDiscussion` button IndexSidebar renders, reusing Flarum's
- * own handler (which lazy-loads the chunk and handles the guest → LogInModal
- * branch). If the user isn't on IndexPage we route there first, then click
- * once the button mounts.
- */
-function startDiscussion(): void {
-  const existing = document.querySelector('.IndexPage-newDiscussion');
-  if (existing instanceof HTMLElement) {
-    existing.click();
-    return;
-  }
-  m.route.set(app.route('index'));
-  /* Poll for the newDiscussion button via rAF until it appears, 1.5 s
-   * ceiling — more reliable than a fixed setTimeout on slow devices. */
-  const deadline = performance.now() + 1500;
-  const tick = () => {
-    const btn = document.querySelector('.IndexPage-newDiscussion');
-    if (btn instanceof HTMLElement) {
-      btn.click();
-      return;
-    }
-    if (performance.now() < deadline) requestAnimationFrame(tick);
-  };
-  requestAnimationFrame(tick);
 }
 
 /**

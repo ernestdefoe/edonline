@@ -107,11 +107,15 @@ export default class HeroPanel extends Component<HeroPanelAttrs> {
         {MosaicComposerTrigger.component()}
 
         <div className="MosaicHero-stats">
-          {this.renderStat('fa-solid fa-users', formatNumber(stats.members), 'Members')}
+          {this.renderStat(
+            'fa-solid fa-users',
+            formatNumber(stats.members),
+            translate('hero.stat_members', 'Members')
+          )}
           {this.renderStat(
             'fa-regular fa-comments',
             formatNumber(stats.discussions),
-            'Discussions'
+            translate('hero.stat_discussions', 'Discussions')
           )}
           {/* Tickets tile auto-hides when stats.resolved is null (support
            * extension not installed) and can be suppressed via the
@@ -120,10 +124,14 @@ export default class HeroPanel extends Component<HeroPanelAttrs> {
             ? this.renderStat(
                 'fa-solid fa-ticket',
                 formatNumber(stats.resolved),
-                'Tickets resolved'
+                translate('hero.stat_resolved', 'Tickets resolved')
               )
             : null}
-          {this.renderStat('fa-regular fa-pen-to-square', formatNumber(stats.posts), 'Posts')}
+          {this.renderStat(
+            'fa-regular fa-pen-to-square',
+            formatNumber(stats.posts),
+            translate('hero.stat_posts', 'Posts')
+          )}
           {this.renderOnlineNowStat(stats.online ?? null)}
         </div>
       </section>
@@ -133,7 +141,7 @@ export default class HeroPanel extends Component<HeroPanelAttrs> {
   renderStat(
     iconName: string,
     value: Mithril.Children,
-    label: string,
+    label: Mithril.Children,
     { iconStyle }: { iconStyle?: IconStyle } = {}
   ): Mithril.Children {
     return (
@@ -195,7 +203,7 @@ export default class HeroPanel extends Component<HeroPanelAttrs> {
               {value} <span className="MosaicHero-stat-live">live</span>
             </div>
             <div className="MosaicHero-stat-lbl">
-              Online now{' '}
+              {translate('hero.stat_online', 'Online now')}{' '}
               {fa('fa-solid fa-chevron-down', {
                 fontSize: '9px',
                 marginLeft: '4px',

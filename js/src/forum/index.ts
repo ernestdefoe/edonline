@@ -102,7 +102,17 @@ app.initializers.add(
     class MosaicBlogNavWrapper extends Component {
       view() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return [m(MosaicHeroNav), m(OriginalBlogComponent, this.attrs as any)];
+        const blogVnode = m(OriginalBlogComponent, (this.attrs ?? {}) as any);
+
+        // Mithril forbids mixed keyed/unkeyed vnodes within one fragment.
+        // On SPA route transitions Flarum keys the route component, so the
+        // blog vnode inherits a key while the bare nav vnode has none —
+        // that mismatch throws "vnodes must either all have keys or none"
+        // and blanks the page. Match the nav's keying to the blog vnode's.
+        const navVnode =
+          blogVnode.key != null ? m(MosaicHeroNav, { key: 'mosaic-blog-nav' }) : m(MosaicHeroNav);
+
+        return [navVnode, blogVnode];
       }
     }
 

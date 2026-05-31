@@ -83,7 +83,7 @@
     font-weight: 600;
     font-size: 15px;
     letter-spacing: -0.005em;
-    margin: 0 0 4px;
+    margin: 0 0 2px;
     color: var(--text);
 
     &:hover { color: var(--primary); }
@@ -240,37 +240,50 @@
    for the `item-<key>` class on each <li>.
    ===================================================================== */
 
-/* DiscussionListItem — tags break onto their own row directly under
-   the title, the rest of the metadata (last-poster, replied-time)
-   flows on the next row. The info <ul> is already positioned below
-   the title <h2> in the source, so we just need to force a row break
-   after the tags <li>.
+/* DiscussionListItem — tag pills sit directly below the title,
+   left-aligned and only as wide as the pills need. The meta items
+   (last poster, time) flow on the next row via an invisible sentinel.
 
    Counter-rule: vendor/flarum/tags ships
    `.DiscussionListItem-info > .item-tags { position: absolute;
-   right: 80px; top: 14px; max-width: 150px; -webkit-mask-image: …;
-   overflow: hidden; }` to float the tag chip into the top-right of
-   the card. We have to unset every one of those properties or
-   `flex-basis: 100%` is ignored (absolute elements are removed from
-   the flex flow). Specificity beats the upstream rule via the
-   parent `.DiscussionListItem` prefix. */
+   right: 80px; top: 14px; … }` to float the chip into the top-right.
+   We unset those properties and take tags back into the flex flow.
+   Specificity beats the upstream rule via the `.DiscussionListItem`
+   ancestor prefix.
+
+   Row-break technique: an `::after` pseudo-element with
+   `flex-basis: 100%; order: 0` sits between the tags (order -1) and
+   all other info `<li>` items (order 1). Being full-width it occupies
+   a flex line by itself (height 0), forcing meta items to a new line
+   without inflating the tag item to full card width. */
 .DiscussionListItem .DiscussionListItem-info {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   column-gap: 8px;
-  row-gap: 4px;
+
+  &::after {
+    content: '';
+    flex-basis: 100%;
+    height: 0;
+    order: 0;
+  }
 
   > .item-tags {
     position: static;
-    flex-basis: 100%;
+    flex: 0 0 auto;
     max-width: none;
     overflow: visible;
     white-space: normal;
     -webkit-mask-image: none;
-    margin: 0 0 2px;
+    margin: 0 0 4px;
     top: auto;
     right: auto;
+    order: -1;
+  }
+
+  > li:not(.item-tags) {
+    order: 1;
   }
 }
 

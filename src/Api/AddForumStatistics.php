@@ -268,7 +268,7 @@ class AddForumStatistics
     {
         $limit = max(1, min($limit, 20));
 
-        return $this->cache->remember('mosaic.stats.topContributors.' . $limit, self::CACHE_TTL, function () use ($limit) {
+        return $this->cache->remember('mosaic.stats.topContributors.v2.' . $limit, self::CACHE_TTL, function () use ($limit) {
             try {
                 return User::query()
                     ->where('comment_count', '>', 0)
@@ -294,7 +294,7 @@ class AddForumStatistics
         try { $displayName = $u->display_name ?: $u->username; } catch (\BadFunctionCallException | \RuntimeException $e) { /* keep username */ }
 
         $avatarUrl = null;
-        try { $avatarUrl = $u->avatarUrl(); } catch (\BadFunctionCallException | \RuntimeException $e) { /* initials fallback */ }
+        try { $avatarUrl = $u->avatarUrl; } catch (\BadFunctionCallException | \RuntimeException $e) { /* initials fallback */ }
 
         $comments    = (int) $u->comment_count;
         $discussions = (int) $u->discussion_count;

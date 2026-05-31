@@ -50,7 +50,9 @@ export default class MosaicHeroNav extends Component {
      *   - per-tag rows from flarum/tags pollute the bar
      *   - the 'more' / 'moreTags' overflow link from flarum/tags
      *   - any separator added between tag groups */
-    ['allDiscussions', 'loading', 'tags', 'moreTags', 'separator'].forEach((k) => itemList.remove(k));
+    ['allDiscussions', 'loading', 'tags', 'moreTags', 'separator'].forEach((k) =>
+      itemList.remove(k)
+    );
 
     const items = itemList.toArray().filter((vnode) => {
       if (!vnode || typeof vnode.tag === 'string') return false;

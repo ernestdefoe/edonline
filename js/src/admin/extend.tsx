@@ -1,10 +1,14 @@
-// @ts-nocheck — TODO: declare class properties + parameter types
-// Transitional marker from the audit-driven TS conversion. The
-// underlying JS uses Flarum's `this.foo = ...` initialiser pattern
-// which TypeScript strict mode rejects. Remove once a follow-up pass
-// adds explicit property declarations and vnode/callback types.
 import Admin from 'flarum/common/extenders/Admin';
+import type Mithril from 'mithril';
 import QuickActionsEditor from './components/QuickActionsEditor';
+
+/**
+ * The subset of the ExtensionPage instance the custom Quick Actions setting
+ * needs: `setting(key, default)` returns a Stream-backed bidi accessor.
+ */
+interface SettingHost {
+  setting(key: string, fallback?: string): (value?: string) => string;
+}
 
 /**
  * Admin settings for the Mosaic theme.
@@ -90,7 +94,7 @@ export default [
      * `this` bound to the ExtensionPage instance. `this.setting(key)`
      * returns a Mithril Stream we pass to the editor as a bidi
      * accessor — read with `bidi()`, write with `bidi(jsonString)`. */
-    .customSetting(function () {
+    .customSetting(function (this: SettingHost): Mithril.Children {
       return <QuickActionsEditor valueStream={this.setting('mosaicQuickActions', '[]')} />;
     }),
 ];

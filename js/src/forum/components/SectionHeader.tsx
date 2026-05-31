@@ -1,35 +1,36 @@
-// @ts-nocheck — TODO: declare class properties + parameter types
-// Transitional marker from the audit-driven TS conversion. The
-// underlying JS uses Flarum's `this.foo = ...` initialiser pattern
-// which TypeScript strict mode rejects. Remove once a follow-up pass
-// adds explicit property declarations and vnode/callback types.
-import Component from 'flarum/common/Component';
+import Component, { ComponentAttrs } from 'flarum/common/Component';
 import app from 'flarum/forum/app';
 
+interface SectionHeaderAttrs extends ComponentAttrs {
+  count?: number | null;
+  title?: string;
+}
+
 /**
- * SectionHeader — the "Recent Discussions" title + count badge that
- * sits above the IndexPage toolbar/filter row. Matches the render.
+ * SectionHeader — the "Recent Discussions" title + count badge that sits above
+ * the IndexPage toolbar/filter row.
  *
- * The count tries the same multi-source resolution as the hero stats:
- * a forum attribute if present, else loaded-store size, else hidden.
+ * The count tries a forum attribute first (now backed server-side by
+ * mosaicDiscussionCount), then the loaded-store size, else hides.
  */
-export default class SectionHeader extends Component {
+export default class SectionHeader extends Component<SectionHeaderAttrs> {
   view() {
     const count = this.attrs.count ?? resolveCount();
     return (
       <div className="MosaicSectionHead">
-        <h2 className="MosaicSectionHead-title">
-          {this.attrs.title || 'Recent Discussions'}
-        </h2>
+        <h2 className="MosaicSectionHead-title">{this.attrs.title || 'Recent Discussions'}</h2>
         {count != null && <span className="MosaicSectionHead-count">{format(count)}</span>}
       </div>
     );
   }
 }
 
-function resolveCount() {
+function resolveCount(): number | null {
   const f = app.forum;
-  const fromAttr = f.attribute('discussionCount') ?? f.attribute('discussionsCount');
+  const fromAttr =
+    f.attribute<number | string | undefined>('discussionCount') ??
+    f.attribute<number | string | undefined>('discussionsCount') ??
+    f.attribute<number | string | undefined>('mosaicDiscussionCount');
   if (fromAttr != null) {
     const n = Number(fromAttr);
     if (Number.isFinite(n)) return n;
@@ -42,7 +43,7 @@ function resolveCount() {
   }
 }
 
-function format(n) {
+function format(n: number): string {
   const v = Number(n) || 0;
   if (v >= 1000) return (v / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
   return v.toLocaleString('en-US');

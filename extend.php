@@ -69,6 +69,14 @@ return [
                     ->nullable()
                     ->get(fn () => $stats->memberCount()),
 
+                Schema\Integer::make('mosaicDiscussionCount')
+                    ->nullable()
+                    ->get(fn () => $stats->discussionCount()),
+
+                Schema\Integer::make('mosaicPostCount')
+                    ->nullable()
+                    ->get(fn () => $stats->postCount()),
+
                 Schema\Integer::make('mosaicOnlineCount')
                     ->nullable()
                     ->get(fn () => $stats->onlineCount()),

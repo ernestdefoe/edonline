@@ -12,6 +12,8 @@
 namespace Ernestdefoe\Mosaic\Api;
 
 use Carbon\Carbon;
+use Flarum\Discussion\Discussion;
+use Flarum\Post\Post;
 use Flarum\User\User;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Database\ConnectionInterface;
@@ -45,7 +47,6 @@ class AddForumStatistics
 
     public function __construct(
         private CacheRepository $cache,
-        private ConnectionInterface $db,
         private LoggerInterface $log,
     ) {}
 
@@ -57,6 +58,40 @@ class AddForumStatistics
                 return User::query()->count();
             } catch (QueryException $e) {
                 $this->log->warning('[mosaic] memberCount query failed', ['exception' => $e]);
+                return null;
+            }
+        });
+    }
+
+    /**
+     * Forum-wide discussion total. The hero's "Discussions" tile reads this
+     * instead of counting the ~20 discussions the SPA happens to have in its
+     * store on the current page.
+     */
+    public function discussionCount(): ?int
+    {
+        return $this->cache->remember('mosaic.stats.discussionCount', self::CACHE_TTL, function () {
+            try {
+                return Discussion::query()->count();
+            } catch (QueryException $e) {
+                $this->log->warning('[mosaic] discussionCount query failed', ['exception' => $e]);
+                return null;
+            }
+        });
+    }
+
+    /**
+     * Forum-wide comment-post total. Counts only `comment`-type posts (the
+     * real reply count), excluding event posts like renames and tag changes —
+     * the same definition flarum/statistics uses.
+     */
+    public function postCount(): ?int
+    {
+        return $this->cache->remember('mosaic.stats.postCount', self::CACHE_TTL, function () {
+            try {
+                return Post::query()->where('type', 'comment')->count();
+            } catch (QueryException $e) {
+                $this->log->warning('[mosaic] postCount query failed', ['exception' => $e]);
                 return null;
             }
         });
@@ -169,7 +204,7 @@ class AddForumStatistics
             }
 
             try {
-                return (int) $this->db->table($table)
+                return (int) $this->connection()->table($table)
                     ->where('status', 'resolved')
                     ->count();
             } catch (QueryException $e) {
@@ -196,7 +231,7 @@ class AddForumStatistics
             return $cached === '' ? null : $cached;
         }
 
-        $schema = $this->db->getSchemaBuilder();
+        $schema = $this->connection()->getSchemaBuilder();
         $resolved = '';
         foreach (['linkrobins_support_tickets', 'support_tickets'] as $candidate) {
             try {
@@ -219,5 +254,18 @@ class AddForumStatistics
         $this->cache->put('mosaic.stats.supportTable', $resolved, self::CACHE_TTL);
 
         return $resolved === '' ? null : $resolved;
+    }
+
+    /**
+     * The active database connection, taken from a core Eloquent model rather
+     * than a constructor-injected ConnectionInterface. Flarum wires the
+     * model's connection (and never sets the Facade application root, so the
+     * Schema/DB facades can't be used here); borrowing it keeps this service
+     * free of a low-level connection dependency while still reaching the
+     * schema builder for the foreign support-tickets table probe.
+     */
+    private function connection(): ConnectionInterface
+    {
+        return User::query()->getConnection();
     }
 }

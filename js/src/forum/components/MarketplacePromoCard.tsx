@@ -1,14 +1,14 @@
-// @ts-nocheck — TODO: declare class properties + parameter types
-// Transitional marker from the audit-driven TS conversion. The
-// underlying JS uses Flarum's `this.foo = ...` initialiser pattern
-// which TypeScript strict mode rejects. Remove once a follow-up pass
-// adds explicit property declarations and vnode/callback types.
 import Component from 'flarum/common/Component';
 import app from 'flarum/forum/app';
+import type Mithril from 'mithril';
 import marketplaceUrl from '../utils/marketplaceUrl';
 
+type IconStyle = Record<string, string | number>;
+
 /* Inline icon helper — Flarum 2 removed flarum/common/helpers/icon. */
-const fa = (name, style) => <i className={`icon ${name}`} style={style} aria-hidden="true" />;
+const fa = (name: string, style?: IconStyle): Mithril.Children => (
+  <i className={`icon ${name}`} style={style} aria-hidden="true" />
+);
 
 /**
  * MarketplacePromoCard — purple-gradient CTA in the IndexPage sidebar
@@ -25,7 +25,7 @@ export default class MarketplacePromoCard extends Component {
     const url = marketplaceUrl();
 
     /* If the operator opts out, hide. */
-    if (app.forum.attribute('mosaicHideMarketplacePromo')) return null;
+    if (app.forum.attribute<boolean>('mosaicHideMarketplacePromo')) return null;
 
     return (
       <a className="MosaicSideCard MosaicMarketplacePromo" href={url}>

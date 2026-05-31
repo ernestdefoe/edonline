@@ -1,46 +1,44 @@
-// @ts-nocheck — TODO: declare class properties + parameter types
-// Transitional marker from the audit-driven TS conversion. The
-// underlying JS uses Flarum's `this.foo = ...` initialiser pattern
-// which TypeScript strict mode rejects. Remove once a follow-up pass
-// adds explicit property declarations and vnode/callback types.
-import Component from 'flarum/common/Component';
+import Component, { ComponentAttrs } from 'flarum/common/Component';
 import Button from 'flarum/common/components/Button';
+import type Mithril from 'mithril';
+
+interface QuickAction {
+  icon?: string;
+  label?: string;
+  href?: string;
+}
+
+interface QuickActionsEditorAttrs extends ComponentAttrs {
+  /** Bidi accessor: call with no args to read, with a string to write. */
+  valueStream: (value?: string) => string;
+}
 
 /**
- * QuickActionsEditor — admin row editor for the sidebar Quick Actions
- * card. Each row has three text inputs (icon class, label, URL) and a
- * trio of icon buttons (move up / move down / remove). A footer button
- * appends a new row.
+ * QuickActionsEditor — admin row editor for the sidebar Quick Actions card.
+ * Each row has three text inputs (icon class, label, URL) and move/remove
+ * buttons. Values are stored as a JSON-encoded array of {icon,label,href}
+ * under the `mosaicQuickActions` setting key.
  *
- * Values are stored as a JSON-encoded array of {icon, label, href}
- * objects under the `mosaicQuickActions` setting key. The component is
- * mounted via the admin extender's callback-style `.customSetting()`
- * entry (see js/src/admin/extend.js) which passes a Stream-backed
- * accessor as `valueStream`: call `valueStream()` to read,
- * `valueStream(jsonString)` to write.
- *
- * NB: the prop is named `valueStream` (not `bidi`) because Mithril 2
- * intercepts the literal attr name `bidi` and transforms it into a
- * non-callable two-way-binding object before it reaches the component
- * via vnode.attrs. Any other name passes through unchanged.
- *
- * Empty/incomplete rows are preserved during editing (so the user can
- * type without inputs losing focus) and filtered out at render time on
- * the forum frontend (SidebarPanels.js).
+ * The prop is named `valueStream` (not `bidi`) because Mithril 2 intercepts
+ * the literal attr name `bidi`. Empty/incomplete rows are preserved during
+ * editing (so inputs don't lose focus) and filtered out at the read site
+ * (SidebarPanels) on the forum frontend.
  */
-export default class QuickActionsEditor extends Component {
-  oninit(vnode) {
+export default class QuickActionsEditor extends Component<QuickActionsEditorAttrs> {
+  actions: QuickAction[] = [];
+
+  oninit(vnode: Mithril.Vnode<QuickActionsEditorAttrs, this>) {
     super.oninit(vnode);
 
     const stream = this.attrs.valueStream;
     const raw = (typeof stream === 'function' ? stream() : '') || '';
-    let parsed = [];
+    let parsed: unknown = [];
     try {
       parsed = raw ? JSON.parse(raw) : [];
     } catch (e) {
       parsed = [];
     }
-    this.actions = Array.isArray(parsed) ? parsed.map((a) => ({ ...a })) : [];
+    this.actions = Array.isArray(parsed) ? (parsed as QuickAction[]).map((a) => ({ ...a })) : [];
   }
 
   view() {
@@ -48,10 +46,10 @@ export default class QuickActionsEditor extends Component {
       <div className="Form-group MosaicQuickActionsEditor">
         <label>Quick Actions</label>
         <div className="helpText">
-          Sidebar links shown in the Quick Actions widget. Each row needs an icon class
-          (e.g. <code>fa-solid fa-bolt</code>), a label, and a URL. Leave the editor empty
-          to use built-in defaults (Start a Discussion / Browse Tags / Recent Activity, plus
-          Support and Marketplace links when those extensions are detected).
+          Sidebar links shown in the Quick Actions widget. Each row needs an icon class (e.g.{' '}
+          <code>fa-solid fa-bolt</code>), a label, and a URL. Leave the editor empty to use built-in
+          defaults (Start a Discussion / Browse Tags / Recent Activity, plus Support and Marketplace
+          links when those extensions are detected).
         </div>
 
         <div className="MosaicQuickActionsEditor-rows">
@@ -74,26 +72,26 @@ export default class QuickActionsEditor extends Component {
     );
   }
 
-  renderRow(a, i) {
+  renderRow(a: QuickAction, i: number): Mithril.Children {
     return (
       <div className="MosaicQuickActionsEditor-row" key={i}>
         <input
           className="FormControl MosaicQuickActionsEditor-icon"
           placeholder="fa-solid fa-bolt"
           value={a.icon || ''}
-          oninput={(e) => this.update(i, 'icon', e.target.value)}
+          oninput={(e: Event) => this.update(i, 'icon', (e.target as HTMLInputElement).value)}
         />
         <input
           className="FormControl MosaicQuickActionsEditor-label"
           placeholder="Label shown to visitors"
           value={a.label || ''}
-          oninput={(e) => this.update(i, 'label', e.target.value)}
+          oninput={(e: Event) => this.update(i, 'label', (e.target as HTMLInputElement).value)}
         />
         <input
           className="FormControl MosaicQuickActionsEditor-href"
           placeholder="/path or https://…"
           value={a.href || ''}
-          oninput={(e) => this.update(i, 'href', e.target.value)}
+          oninput={(e: Event) => this.update(i, 'href', (e.target as HTMLInputElement).value)}
         />
         <div className="MosaicQuickActionsEditor-rowBtns">
           <Button
@@ -121,17 +119,17 @@ export default class QuickActionsEditor extends Component {
     );
   }
 
-  addRow() {
+  addRow(): void {
     this.actions.push({ icon: 'fa-solid fa-link', label: '', href: '' });
     this.commit();
   }
 
-  remove(i) {
+  remove(i: number): void {
     this.actions.splice(i, 1);
     this.commit();
   }
 
-  move(i, dir) {
+  move(i: number, dir: number): void {
     const j = i + dir;
     if (j < 0 || j >= this.actions.length) return;
     const tmp = this.actions[i];
@@ -140,16 +138,16 @@ export default class QuickActionsEditor extends Component {
     this.commit();
   }
 
-  update(i, key, value) {
+  update(i: number, key: keyof QuickAction, value: string): void {
     this.actions[i] = { ...this.actions[i], [key]: value };
     this.commit();
   }
 
   /* Write the current array (including blank rows) back through the bidi
    * stream so the page's "save settings" button picks up the dirty state.
-   * Filtering happens at the read site (SidebarPanels.js) so that typing
-   * mid-edit doesn't drop the row from under the input. */
-  commit() {
+   * Filtering happens at the read site (SidebarPanels) so typing mid-edit
+   * doesn't drop the row from under the input. */
+  commit(): void {
     this.attrs.valueStream(JSON.stringify(this.actions));
   }
 }

@@ -2,6 +2,8 @@ import app from 'flarum/forum/app';
 import { extend, override } from 'flarum/common/extend';
 import IndexPage from 'flarum/forum/components/IndexPage';
 import IndexSidebar from 'flarum/forum/components/IndexSidebar';
+import HeaderSecondary from 'flarum/forum/components/HeaderSecondary';
+import Button from 'flarum/common/components/Button';
 import type Mithril from 'mithril';
 import type ItemList from 'flarum/common/utils/ItemList';
 
@@ -41,6 +43,26 @@ app.initializers.add('ernestdefoe-mosaic', () => {
    */
   extend(IndexPage.prototype, 'contentItems', function (items: ItemList<Mithril.Children>) {
     items.add('mosaic-section-header', SectionHeader.component(), 200);
+  });
+
+  /*
+   * Blog compose button — injected into the persistent site header so it
+   * appears on the /blog page (which uses the blog extension's own layout,
+   * not IndexPage, so Mosaic's hero/sidebar overrides don't reach it).
+   * Only rendered when the actor has canCreateBlogPost and is on a /blog route.
+   */
+  extend(HeaderSecondary.prototype, 'items', function (items: ItemList<Mithril.Children>) {
+    if (!app.forum.attribute<boolean>('canCreateBlogPost')) return;
+
+    const path = (window.location?.pathname || '').replace(/\/+$/, '');
+    const onBlog = path === '/blog' || path.startsWith('/blog/');
+    if (!onBlog) return;
+
+    items.add(
+      'mosaic-blog-compose',
+      m(Button, { className: 'Button Button--primary', icon: 'fas fa-feather-alt', onclick: () => m.route.set('/blog/compose') }, 'Write a Post'),
+      10
+    );
   });
 
   /*

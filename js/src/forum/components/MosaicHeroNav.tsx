@@ -47,7 +47,7 @@ export default class MosaicHeroNav extends Component {
     const blogInstalled = app.forum.attribute<boolean | undefined>('canCreateBlogPost') !== undefined;
     if (blogInstalled) {
       const blogLabel = app.forum.attribute<string | null>('linkrobinsBlogNavLabel') || 'Blog';
-      const blogIcon = app.forum.attribute<string | null>('linkrobinsBlogNavIcon') || 'fa-solid fa-newspaper';
+      const blogIcon = app.forum.attribute<string | null>('linkrobinsBlogNavIcon') || 'fas fa-feather-alt';
       pills.push(
         <LinkButton href="/blog" icon={blogIcon} className="MosaicHeaderNav-item">
           {blogLabel}

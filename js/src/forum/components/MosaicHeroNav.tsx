@@ -40,6 +40,21 @@ export default class MosaicHeroNav extends Component {
       );
     }
 
+    // Blog — present whenever linkrobins/blog is installed. The extension
+    // always serializes linkrobinsBlogNavLabel to the forum payload (null when
+    // the admin hasn't set a custom label). We detect presence by checking
+    // that canCreateBlogPost exists in the payload (defined for all actors).
+    const blogInstalled = app.forum.attribute<boolean | undefined>('canCreateBlogPost') !== undefined;
+    if (blogInstalled) {
+      const blogLabel = app.forum.attribute<string | null>('linkrobinsBlogNavLabel') || 'Blog';
+      const blogIcon = app.forum.attribute<string | null>('linkrobinsBlogNavIcon') || 'fa-solid fa-newspaper';
+      pills.push(
+        <LinkButton href="/blog" icon={blogIcon} className="MosaicHeaderNav-item">
+          {blogLabel}
+        </LinkButton>
+      );
+    }
+
     const hasMarketplace = !!(
       app.forum.attribute<string>('marketplaceUrl') ||
       app.forum.attribute<string>('marketplace_shop_path')

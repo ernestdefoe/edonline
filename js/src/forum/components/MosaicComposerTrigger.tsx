@@ -56,6 +56,14 @@ export default class MosaicComposerTrigger extends Component {
             <span className="MosaicComposerTrigger-newBtn-label">{ctaLabel}</span>
           </button>
         </div>
+        {app.forum.attribute<boolean>('canCreateBlogPost') && (
+          <div className="MosaicComposerTrigger-blog">
+            <i className="fas fa-pen-to-square" aria-hidden="true" />
+            <a href="/blog/compose" onclick={(e: MouseEvent) => e.stopPropagation()}>
+              Write a blog post
+            </a>
+          </div>
+        )}
       </div>
     );
   }

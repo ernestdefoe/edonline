@@ -69,6 +69,15 @@ export default class SidebarPanels extends Component {
         { icon: 'fa-solid fa-clock', label: 'Recent Activity', href: '/all' },
       ];
 
+      // Blog post compose — shown when the user has permission to write posts.
+      if (app.forum.attribute<boolean>('canCreateBlogPost')) {
+        links.splice(1, 0, {
+          icon: 'fa-solid fa-pen-to-square',
+          label: 'Write a Blog Post',
+          href: '/blog/compose',
+        });
+      }
+
       const supportUrl = app.forum.attribute<string>('supportUrl');
       if (supportUrl) {
         links.unshift({

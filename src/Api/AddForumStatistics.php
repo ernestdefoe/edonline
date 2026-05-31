@@ -294,7 +294,7 @@ class AddForumStatistics
         try { $displayName = $u->display_name ?: $u->username; } catch (\BadFunctionCallException | \RuntimeException $e) { /* keep username */ }
 
         $avatarUrl = null;
-        try { $avatarUrl = $u->avatarUrl; } catch (\BadFunctionCallException | \RuntimeException $e) { /* initials fallback */ }
+        try { $avatarUrl = $u->avatar_url; } catch (\BadFunctionCallException | \RuntimeException $e) { /* initials fallback */ }
 
         $comments    = (int) $u->comment_count;
         $discussions = (int) $u->discussion_count;

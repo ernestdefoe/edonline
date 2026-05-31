@@ -1,5 +1,6 @@
 import app from 'flarum/forum/app';
 import { extend, override } from 'flarum/common/extend';
+import Component from 'flarum/common/Component';
 import IndexPage from 'flarum/forum/components/IndexPage';
 import IndexSidebar from 'flarum/forum/components/IndexSidebar';
 import HeaderSecondary from 'flarum/forum/components/HeaderSecondary';
@@ -77,6 +78,42 @@ app.initializers.add('ernestdefoe-mosaic', () => {
     navItems().forEach((vnode, i) => items.add(`mosaic-nav-${i}`, vnode, 95 - i));
   });
 });
+
+/*
+ * Blog-page nav pills — extend the blog index and category route components
+ * to prepend MosaicHeroNav so the section pills are present when /blog is set
+ * as the home page or when users navigate directly to the blog section.
+ *
+ * Runs at priority -5 so the blog extension's initializer (which registers
+ * its routes into app.routes) has already completed before we reach in.
+ */
+app.initializers.add(
+  'ernestdefoe-mosaic-blog-nav',
+  () => {
+    // Replace the blog's route components with a Component subclass that
+    // prepends MosaicHeroNav pills then delegates to the original blog
+    // component. A plain object cannot be used here because Flarum's router
+    // calls the static .component() method inherited from Component.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const routes = app.routes as any;
+    const OriginalBlogComponent = routes?.['linkrobins-blog.index']?.component;
+    if (!OriginalBlogComponent) return;
+
+    class MosaicBlogNavWrapper extends Component {
+      view() {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return [m(MosaicHeroNav), m(OriginalBlogComponent, this.attrs as any)];
+      }
+    }
+
+    ['linkrobins-blog.index', 'linkrobins-blog.category'].forEach((routeName) => {
+      if (routes[routeName]) {
+        routes[routeName].component = MosaicBlogNavWrapper;
+      }
+    });
+  },
+  -5
+);
 
 export { default as extend } from './extend';
 

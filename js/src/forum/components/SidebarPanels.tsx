@@ -1,6 +1,7 @@
 import Component from 'flarum/common/Component';
 import app from 'flarum/forum/app';
 import type Mithril from 'mithril';
+import extractText from 'flarum/common/utils/extractText';
 import marketplaceUrlHelper from '../utils/marketplaceUrl';
 import translate from '../utils/translate';
 
@@ -62,18 +63,26 @@ export default class SidebarPanels extends Component {
       links = [
         {
           icon: 'fa-solid fa-plus',
-          label: 'Start a Discussion',
+          label: extractText(translate('sidebar.qa_start_discussion', 'Start a Discussion')),
           href: app.route('index') + '?composer',
         },
-        { icon: 'fa-solid fa-tags', label: 'Browse Tags', href: app.route('tags') || '/tags' },
-        { icon: 'fa-solid fa-clock', label: 'Recent Activity', href: '/all' },
+        {
+          icon: 'fa-solid fa-tags',
+          label: extractText(translate('sidebar.qa_browse_tags', 'Browse Tags')),
+          href: app.route('tags') || '/tags',
+        },
+        {
+          icon: 'fa-solid fa-clock',
+          label: extractText(translate('sidebar.qa_recent_activity', 'Recent Activity')),
+          href: '/all',
+        },
       ];
 
       // Blog post compose — shown when the user has permission to write posts.
       if (app.forum.attribute<boolean>('canCreateBlogPost')) {
         links.splice(1, 0, {
           icon: 'fa-solid fa-pen-to-square',
-          label: 'Write a Blog Post',
+          label: extractText(translate('sidebar.qa_write_blog', 'Write a Blog Post')),
           href: '/blog/compose',
         });
       }
@@ -82,7 +91,7 @@ export default class SidebarPanels extends Component {
       if (supportUrl) {
         links.unshift({
           icon: 'fa-solid fa-headset',
-          label: 'Open a Support Ticket',
+          label: extractText(translate('sidebar.qa_support_ticket', 'Open a Support Ticket')),
           href: supportUrl,
         });
       }
@@ -93,7 +102,7 @@ export default class SidebarPanels extends Component {
       if (marketplaceUrl) {
         links.push({
           icon: 'fa-solid fa-store',
-          label: 'Visit the Marketplace',
+          label: extractText(translate('sidebar.qa_marketplace', 'Visit the Marketplace')),
           href: marketplaceUrl,
         });
       }
@@ -103,7 +112,7 @@ export default class SidebarPanels extends Component {
       <div className="MosaicSideCard">
         <h3 className="MosaicSideCard-title">
           {fa('fa-solid fa-bolt', { color: 'var(--primary)' })}
-          <span>Quick Actions</span>
+          <span>{translate('sidebar.quick_actions_title', 'Quick Actions')}</span>
         </h3>
         {links.map((l) => (
           <a className="MosaicQuickAction" href={l.href}>
@@ -139,7 +148,7 @@ export default class SidebarPanels extends Component {
       <div className="MosaicSideCard">
         <h3 className="MosaicSideCard-title">
           {fa('fa-solid fa-trophy', { color: 'var(--primary)' })}
-          <span>Top Contributors</span>
+          <span>{translate('sidebar.top_contributors_title', 'Top Contributors')}</span>
         </h3>
         {contributors.map((c) => (
           <a className="MosaicContribRow" href={c.href || '#'}>
@@ -188,7 +197,7 @@ export default class SidebarPanels extends Component {
       <div className="MosaicSideCard">
         <h3 className="MosaicSideCard-title">
           {fa('fa-solid fa-fire', { color: 'var(--primary)' })}
-          <span>Trending</span>
+          <span>{translate('sidebar.trending_title', 'Trending')}</span>
         </h3>
         {items.map((t, i) => (
           <a href={t.href} className="MosaicTrendRow">

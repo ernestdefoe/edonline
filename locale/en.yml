@@ -24,3 +24,13 @@ ernestdefoe-mosaic:
       tags: Tags
       start_discussion: Start a Discussion
       start_ticket: Start a Ticket
+    sidebar:
+      quick_actions_title: Quick Actions
+      top_contributors_title: Top Contributors
+      trending_title: Trending
+      qa_start_discussion: Start a Discussion
+      qa_browse_tags: Browse Tags
+      qa_recent_activity: Recent Activity
+      qa_write_blog: Write a Blog Post
+      qa_support_ticket: Open a Support Ticket
+      qa_marketplace: Visit the Marketplace

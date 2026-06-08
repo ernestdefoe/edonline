@@ -252,5 +252,6 @@ export default class HeroPanel extends Component<HeroPanelAttrs> {
 /** Formats large numbers with thousand separators. Returns '—' for null/undefined. */
 function formatNumber(n: number | null | undefined): string {
   if (n === null || n === undefined) return '—';
-  return Number(n).toLocaleString('en-US');
+  // No fixed locale — group digits per the visitor's own locale.
+  return Number(n).toLocaleString();
 }

@@ -13,7 +13,6 @@ namespace Ernestdefoe\Mosaic\Api;
 
 use Flarum\Settings\SettingsRepositoryInterface;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 
 /**
  * Reads the theme's admin-configured settings out of Flarum's

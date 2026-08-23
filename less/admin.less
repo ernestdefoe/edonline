@@ -172,23 +172,35 @@ body {
   color: var(--text);
 }
 
-.FormControl,
-input[type='text'],
-input[type='email'],
-input[type='password'],
-input[type='number'],
-textarea,
-select {
-  background: var(--surface-inset);
-  border: 1px solid var(--border);
-  border-radius: var(--r-sm);
-  color: var(--text);
-  transition: border-color 0.15s, background 0.15s;
+/* Inputs are scoped under #app so the theme reliably wins the cascade over
+   core's default .FormControl background AND any extension (e.g. fof/extend's
+   extension-manager) whose admin CSS happens to load after this file. Without
+   the #app id bump these rules sit at the same (0,1,0) specificity as the
+   overrides and lose on a load-order tie — which is why the inputs rendered
+   white on the live install but stayed themed locally (asset load order
+   differs between installs). */
+#app {
+  .FormControl,
+  input[type='text'],
+  input[type='email'],
+  input[type='password'],
+  input[type='number'],
+  input[type='search'],
+  input[type='url'],
+  input[type='tel'],
+  textarea,
+  select {
+    background: var(--surface-inset);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    color: var(--text);
+    transition: border-color 0.15s, background 0.15s;
 
-  &:focus {
-    border-color: var(--primary);
-    background: var(--surface);
-    outline: none;
+    &:focus {
+      border-color: var(--primary);
+      background: var(--surface);
+      outline: none;
+    }
   }
 }
 
